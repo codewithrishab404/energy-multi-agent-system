@@ -14,7 +14,7 @@ collection = client.get_or_create_collection("energy_logs")
 
 #  ------------------- DATA Agent ----------------------------------------------------------
 # 🔧 chunk function
-def chunk_text(text, chunk_size=300, overlap=50):
+def chunk_text(text, chunk_size=400, overlap=50):
     chunks = []
     start = 0
     
@@ -69,7 +69,7 @@ if (st.button("Ask") and query):
     
     results = collection.query(
         query_embeddings=[query_embedding],
-        n_results=3
+        n_results=2
     )
     relevant_docs = results["documents"][0]
     
