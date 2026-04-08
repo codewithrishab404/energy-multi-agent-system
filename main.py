@@ -11,6 +11,8 @@ client = chromadb.PersistentClient(path="./chroma_db")
 # ✅ safe collection creation
 collection = client.get_or_create_collection("energy_logs")
 
+
+#  ------------------- DATA Agent ----------------------------------------------------------
 # 🔧 chunk function
 def chunk_text(text, chunk_size=300, overlap=50):
     chunks = []
@@ -54,8 +56,56 @@ for filename in os.listdir(folder_path):
 
 st.title("Energy AI Assistant")
 
-query = st.text_input("Enter your Query")
+#  -----  --------- End of Data Agent
 
+#----------------------  Start of Analysis Agent
+
+query = st.text_input("Enter your Query")
+if (st.button("Ask") and query):
+    query_embedding = ollama.embed(
+        model="nomic-embed-text-v2-moe",
+        input=query
+    )["embeddings"][0]
     
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=3
+    )
+    relevant_docs = results["documents"][0]
+    
+    #  ------ End of Analysis Agent
+
+    # ------- Start of Report Agent
+    # 🔹 4. Create context
+    context = "\n".join(relevant_docs)
+    
+    response = ollama.chat(
+        model="ministral-3:3b",
+        messages=[
+            {
+                "role": "user",
+                "content": f"""
+    You are an energy analysis assistant.
+
+    Use the following logs to answer the question clearly and accurately.
+
+    Logs:
+    {context}
+
+    Question:
+    {query}
+
+    Answer:
+    """
+            }
+        ]
+    )
+    
+    # 🔹 5. Show final answer
+    st.subheader("🤖 AI Answer:")
+    st.write(response["message"]["content"])
+    st.subheader("🔍 Relevant Logs:")
+    for doc in relevant_docs:
+        st.write(doc)
 
     
